@@ -1,0 +1,9 @@
+pandas
+numpy
+streamlit
+plotly
+openpyxl
+boto3
+s3fs
+scikit-learn
+tensorflow
