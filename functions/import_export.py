@@ -10,11 +10,10 @@ from io import StringIO
 from tensorflow import keras
 
 BUCKET_NAME = 'babyfoot'
-KEY_FILE_DATA = "score_for_me.csv"
+KEY_FILE_DATA = "score_baby.csv"
 KEY_FILE_MODEL = "model_baby.h5"
-ACCESS_KEY_ID = "AKIA3S5CIUB46R2YTQW4"
-SECRET_ACCESS_KEY = "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"
-
+ACCESS_KEY_ID = os.environ['ACCESS_KEY_ID']
+SECRET_ACCESS_KEY = os.environ['SECRET_ACCESS_KEY']
 
 def import_data():
 
@@ -31,7 +30,7 @@ def import_data():
         status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
 
         if status == 200:
-            data = pd.read_excel(response.get("Body"))
+            data = pd.read_csv(response.get("Body"))
 
             try:
                 data.drop(['Unnamed: 0'], axis=1, inplace=True)
@@ -63,9 +62,9 @@ def export_data(data):
     #Creating S3 Resource From the Session.
     s3_res = session.resource('s3')
 
-    xls_buffer = StringIO()
-    data.to_excel(xls_buffer)
-    response = s3_res.Object(BUCKET_NAME, KEY_FILE_DATA).put(Body=xls_buffer.getvalue())
+    csv_buffer = StringIO()
+    data.to_csv(csv_buffer)
+    response = s3_res.Object(BUCKET_NAME, KEY_FILE_DATA).put(Body=csv_buffer.getvalue())
 
     status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
 
