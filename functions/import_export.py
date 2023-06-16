@@ -7,7 +7,8 @@ import os
 
 from io import StringIO
 
-from tensorflow import keras
+import tensorflow as tf
+
 
 BUCKET_NAME = 'babyfoot'
 KEY_FILE_DATA = "score_baby.csv"
@@ -71,7 +72,7 @@ def export_data(data):
     return status
 
 
-def import_model():
+def import_model(local_path, name_on_s3):
 
     s3_client = boto3.client(
         "s3",
@@ -79,19 +80,23 @@ def import_model():
         aws_secret_access_key= SECRET_ACCESS_KEY
     )
 
-    try:
+    s3_client.download_file(BUCKET_NAME, name_on_s3, local_path)
 
-        response = s3_client.get_object(Bucket=BUCKET_NAME, Key=KEY_FILE_MODEL)
+# Load the model using TensorFlow
+    return tf.keras.models.load_model(local_path)
 
-        status = response.get("ResponseMetadata", {}).get("HTTPStatusCode")
 
-        if status == 200:
-            model = keras.models.load_model(response.get("Body"))
+    
+def export_model(export_path, name_on_s3):
 
-            return model
 
-        else:
-            return None
-        
-    except:
-        return None
+    s3_client = boto3.client(
+        "s3",
+        aws_access_key_id= ACCESS_KEY_ID ,
+        aws_secret_access_key= SECRET_ACCESS_KEY
+    )
+
+    with open(export_path, 'rb') as file:
+        s3_client.upload_fileobj(file, BUCKET_NAME, name_on_s3)
+
+    print('Model uploaded to S3 successfully!')

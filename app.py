@@ -1,12 +1,17 @@
 import streamlit as st
 
+import tensorflow as tf
+
 import numpy as np
 
 import pandas as pd
 
-from functions.import_export import import_data, export_data
+from functions.import_export import import_data, export_data, export_model, import_model
 from functions.preprocessing import preprocessing_vic_or_def
 from functions.training_model import train_model
+
+local_path_model = './tmp_model_new/model.h5'
+s3_name_model = 'model.h5'
 
 # -- FUNCTIONS -- 
 
@@ -78,6 +83,10 @@ if st.button('Ré-entrainer le modèle'):
 
     model, train_accuracy, test_accuracy, total_accuracy = train_model(X, Y)
 
+    model.save(local_path_model)
+
+    export_model(local_path_model, s3_name_model)
+
     st.write(f'train_data_accuracy : {np.round(train_accuracy*100, 4)} %')
 
     st.write(f'test_data_accuracy : {np.round(test_accuracy*100, 4)} %')
@@ -104,6 +113,11 @@ B_def = st.selectbox('Blanc - défenseur', B_def_list)
 
 if st.button('Tenter une prédiction'):
 
+    try:
+        model = tf.keras.models.load_model(local_path_model)
+    except:
+        model = import_model(local_path_model, s3_name_model)
+
 
     df = pd.DataFrame({'N_att':[N_att],
                            'N_def':[N_def],
@@ -118,9 +132,11 @@ if st.button('Tenter une prédiction'):
 
     if result < 0.5:
         st.write('Victoire des Blancs !...')
+        st.write(f'Taux de confiance : {(0.5 - result.flatten().flatten())*200} %')
 
     else:
         st.write('Victoire des noirs !...')
+        st.write(f'Taux de confiance :  {(result.flatten().flatten() - 0.5)*200} %')
 
 
 
